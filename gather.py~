@@ -1,6 +1,6 @@
 """
-Scrapes as many new puzzles from the internet
-as desired and adds them to the local puzzle bank
+Scrapes 100 new puzzles from the internet
+and adds them to the local puzzle bank
 """
 import urllib2
 import sys
