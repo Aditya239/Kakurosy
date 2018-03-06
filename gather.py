@@ -33,6 +33,7 @@ with file:
     for line in file:
         if line.rstrip("\r\n").isdigit():
             puzzlebank = puzzlebank + [int(line)]
+    file.close()
 print 'Currently there are %d unique puzzles in the local puzzle bank!'%(len(set(puzzlebank)))
 print 'Note: A second\'s pause is good practice while scraping online. Be grateful! Internet King Lear:' \
       '\n\"How sharper than a serpent\'s tooth it is to have a thankless scraper!\"'
@@ -69,5 +70,9 @@ with file:
                 addr = elemitem['name']
                 total = int(elemitem['value'])
                 file.write(str(total)+addr[5].encode('ascii')+str(int(addr[7]))+str(int(addr[9]))+'\n')
+        for elem in kakurosoup.find_all(class_="cellNumber"):
+            for elemitem in elem.find_all('input'):
+                addr = elemitem['name']
+                file.write('e'+str(int(addr[5])) + str(int(addr[7])) + '\n')
     print ('\nPuzzle bank updated with %d new Kakuro puzzles!'%(numpuzzles))
     file.close()
