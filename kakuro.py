@@ -262,7 +262,7 @@ class KakuroRandomGame(object):
             currprob = 1.0 / (numpuzzles-ctr)
             currguess = random.random()
         self.gameId = puzzlebank[ctr]
-        print "Selected puzzle: Number "+str(puzzlebank[ctr])
+        print "Selected puzzle: Number "+str(puzzlebank[ctr])+ ". Click anywhere to begin..."
 
         file = open("savedpuzzles.txt", "r")
         readstatus = 0
@@ -343,7 +343,7 @@ class KakuroCustomGame(object):
                             self.data_totals = self.data_totals + [[int(proced[j][1]),'h',i,j]]
         except(ValueError):
             raise KakuroError('Format not followed! Integers only otherwise something else')
-        print '\nStarting curstom game...'
+        print '\nStarting custom game. Click anywhere to begin...'
         self.gameId = 0
         self.game_over = False
 
@@ -386,8 +386,14 @@ class KakuroCustomGame(object):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        raise KakuroError("Wrong number of arguments! Enter mode (custom or random) to run in as argument.\n" \
-                          "Example Usage: python kakuro.py random to run random puzzles")
+        print ("Wrong number of arguments! Enter mode (custom or random) to run in as argument.\n"
+               " Example Usage: python kakuro.py random to run random puzzles\n"
+               "Going forward with random...\n")
+        game = KakuroRandomGame()
+        root = Tk()
+        ui = KakuroUI(root, game)
+        root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
+        root.mainloop()
     if sys.argv[1]=='random':
         game = KakuroRandomGame()
         root = Tk()
