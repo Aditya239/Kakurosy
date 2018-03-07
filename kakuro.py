@@ -75,7 +75,7 @@ class KakuroUI(Frame):
                     )
 
     def draw_puzzle(self):
-        self.canvas.delete("numbers")
+        self.canvas.delete("numbersfilled")
         for elem in self.game.data_totals:
             i = elem[2]
             j = elem[3]
@@ -96,7 +96,7 @@ class KakuroUI(Frame):
                 MARGIN + j * SIDE + SIDE / 2,
                 MARGIN + i * SIDE + SIDE / 2,
                 font=("Purissa", 20),
-                text=elem[2], tags="numbers",
+                text=elem[2], tags="numbersfilled",
                 fill="slate gray"
             )
 
@@ -230,6 +230,7 @@ class KakuroUI(Frame):
     def clear_answers(self):
         self.game.data_filled = []
         self.canvas.delete("victory")
+        self.canvas.delete("circ")
         self.draw_puzzle()
 
 class KakuroRandomGame(object):
