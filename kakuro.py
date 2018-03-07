@@ -1,6 +1,7 @@
 import sys
 import random
-from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
+import time
+from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM, PhotoImage, Label
 from datetime import datetime
 
 random.seed(datetime.now())
@@ -21,7 +22,6 @@ class KakuroUI(Frame):
     """
     def __init__(self, parent, game):
         self.game = game
-        print self.game.data_fills
         Frame.__init__(self, parent)
         self.parent = parent
         self.row, self.col = -1, -1
@@ -43,6 +43,7 @@ class KakuroUI(Frame):
         self.canvas.bind("<Down>", self.Downkey_pressed)
         self.canvas.bind("<Right>", self.Rightkey_pressed)
         self.canvas.bind("<Left>", self.Leftkey_pressed)
+        self.canvas.bind("<BackSpace>", self.Bkspkey_pressed)
         self.canvas.bind("<Key>", self.key_pressed)
 
     def draw_grid(self):
@@ -111,6 +112,17 @@ class KakuroUI(Frame):
                 outline="red", tags="cursor"
             )
 
+    def create_circs(self, addrs):
+        if len(addrs)==0:
+            return
+        for elem in addrs:
+            self.canvas.create_oval(
+                # Figure out the inversion!
+                MARGIN + SIDE * elem[1], MARGIN + SIDE * elem[0],
+                MARGIN + SIDE * elem[1] + SIDE, MARGIN + SIDE * elem[0] + SIDE,
+                tags="circ", outline="red", width=2.0
+            )
+
     def draw_victory(self):
         self.canvas.create_oval(
             MARGIN + SIDE * 2, MARGIN + SIDE * 2,
@@ -137,10 +149,27 @@ class KakuroUI(Frame):
             self.row, self.col = -1, -1
         self.draw_cursor()
 
+    def road(self, addr):
+        if bool(addr[0] == self.row) == bool(addr[1] == self.col):
+            return False
+        elif addr[0] == self.row:
+            curr_row = self.row
+            for iter in range(min(addr[1],self.col), max(addr[1],self.col)):
+                if [curr_row, iter] not in self.game.data_fills:
+                    return False
+            return True
+        else:
+            curr_col = self.col
+            for iter in range(min(addr[0],self.row), max(addr[0],self.row)):
+                if [iter, curr_col] not in self.game.data_fills:
+                    return False
+            return True
+
     def key_pressed(self, event):
+        self.canvas.delete("circ")
         if self.game.game_over:
             return
-        if self.row >= 0 and self.col >= 0 and event.char in "1234567890" and event.char!='' and [self.row, self.col] in self.game.data_fills:
+        if self.row >= 0 and self.col >= 0 and event.char in "123456789" and event.char!='' and [self.row, self.col] in self.game.data_fills:
             found_flag = False
             for ind, item in enumerate(self.game.data_filled):
                 if item[0]==self.row and item[1]==self.col:
@@ -148,6 +177,15 @@ class KakuroUI(Frame):
                     self.game.data_filled[ind][2] = int(event.char)
             if(not found_flag):
                 self.game.data_filled = self.game.data_filled + [[self.row, self.col, int(event.char)]]
+
+            circlists = []
+            for elem in self.game.data_filled:
+                if self.road(elem) and elem[2]==int(event.char):
+                    if [self.row, self.col] not in circlists:
+                        circlists = circlists + [[self.row, self.col]]
+                    if [elem[0], elem[1]] not in circlists:
+                        circlists = circlists + [[elem[0], elem[1]]]
+            self.create_circs(circlists)
             self.draw_puzzle()
             self.draw_cursor()
             if self.game.check_win():
@@ -181,8 +219,17 @@ class KakuroUI(Frame):
             self.col = self.col - 1
             self.draw_cursor()
 
+    def Bkspkey_pressed(self, event):
+        self.canvas.delete("circ")
+        if self.game.game_over:
+            return
+        if self.row >=0 and self.col >=0:
+            self.game.data_filled = [item for item in self.game.data_filled if item[0]!=self.row or item[1]!=self.col]
+        self.draw_cursor()
+        self.draw_puzzle()
+
     def clear_answers(self):
-        self.game.set_answer_to_puzzle()
+        self.game.data_filled = []
         self.canvas.delete("victory")
         self.draw_puzzle()
 
@@ -237,7 +284,40 @@ class KakuroGame(object):
         self.game_over = False
 
     def check_win(self):
-        return False
+        if(len(self.data_filled) == len(self.data_fills)):
+            for item in self.data_filled:
+                if [item[0], item[1]-1] not in self.data_fills:
+                    sumexp = -1
+                    for elem in self.data_totals:
+                        if elem[2] == item[0] and elem[3] == item[1]-1 and elem[1] == 'h':
+                            sumexp = elem[0]
+                    offset = 0
+                    sumact = []
+                    while [item[0], item[1]+offset] in self.data_fills:
+                        sumact = sumact + [e[2] for e in self.data_filled if e[0] == item[0] and e[1] == item[1]+offset]
+                        offset = offset + 1
+                    if len(sumact) != len(set(sumact)):
+                        return False
+                    if sumexp != -1 and sumexp != sum(sumact):
+                        return False
+            for item in self.data_filled:
+                if [item[0]-1, item[1]] not in self.data_fills:
+                    sumexp = -1
+                    for elem in self.data_totals:
+                        if elem[2] == item[0]-1 and elem[3] == item[1] and elem[1] == 'v':
+                            sumexp = elem[0]
+                    offset = 0
+                    sumact = []
+                    while [item[0]+offset, item[1]] in self.data_fills:
+                        sumact = sumact + [e[2] for e in self.data_filled if e[0] == item[0]+offset and e[1] == item[1]]
+                        offset = offset + 1
+                    if len(sumact) != len(set(sumact)):
+                        return False
+                    if sumexp != -1 and sumexp != sum(sumact):
+                        return False
+            return True
+        else:
+            return False
 
 if __name__ == '__main__':
     game = KakuroGame()
