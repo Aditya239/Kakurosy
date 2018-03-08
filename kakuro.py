@@ -34,10 +34,11 @@ class KakuroUI(Frame):
         self.canvas.pack(fill=BOTH, side=TOP)
 
         solve_button = Button(self, text="Solve!", command=self.solve)
-        #TODO: Fix this trigger!
         solve_button.pack(side=RIGHT, padx = 10)
         clear_button = Button(self, text="Clear answers", command=self.clear_answers)
         clear_button.pack(side=RIGHT)
+        try_button = Button(self, text="Try another", command=self.load_another)
+        try_button.pack(side=RIGHT, padx = 10)
 
         self.draw_grid()
         self.draw_puzzle()
@@ -72,11 +73,11 @@ class KakuroUI(Frame):
                 if [i, j] not in self.game.data_fills:
                     self.canvas.create_rectangle(MARGIN + j * SIDE + 1, MARGIN + i * SIDE + 1,
                                                  MARGIN + j * SIDE + SIDE - 2, MARGIN + i * SIDE + SIDE - 2,
-                                                 outline="gray", fill="gray")
+                                                 outline="gray", fill="gray", tag = "grays")
                     self.canvas.create_line(
                         MARGIN + j * SIDE, MARGIN + i * SIDE,
                         MARGIN + j * SIDE + SIDE, MARGIN + i * SIDE + SIDE,
-                        width=2
+                        width=2, tag = "grayliners"
                     )
 
     def draw_puzzle(self):
@@ -345,11 +346,72 @@ class KakuroUI(Frame):
                 self.game.data_filled = self.game.data_filled + [[int(v.name[9])-1, int(v.name[11])-1, int(v.name[7])]]
         self.draw_puzzle()
 
+    def load_another(self):
+        self.game.data_filled = []
+        self.game.data_fills = []
+        self.game.data_totals = []
+        puzzlebank = []
+        try:
+            file = open("savedpuzzles.txt", "r")
+        except IOError:
+            print "Could not acquire read access to file: savedpuzzles.txt"
+            sys.exit()
+        with file:
+            for line in file:
+                if line.rstrip("\r\n").isdigit():
+                    puzzlebank = puzzlebank + [int(line)]
+            file.close()
+        puzzlebank = [ele for ele in puzzlebank if ele not in self.game.played_so_far]
+        numpuzzles = len(puzzlebank)
+        if len(puzzlebank) == 0:
+            print "Uh-Oh! You have exhausted the puzzle bank! Gather more puzzles!"
+            sys.exit()
+        print "There seem to be " + str(numpuzzles) + " unique (untried in this session) puzzles!"
+        print "Randomly picking one..."
+        ctr = 0
+        currprob = 1.0 / (numpuzzles - ctr)
+        currguess = random.random()
+        while (currguess > currprob and ctr < numpuzzles - 1):
+            ctr = ctr + 1
+            currprob = 1.0 / (numpuzzles - ctr)
+            currguess = random.random()
+        self.game.gameId = puzzlebank[ctr]
+        print "Selected puzzle: Number " + str(puzzlebank[ctr]) + ". Click anywhere on the grid to begin..."
+        self.game.played_so_far = self.game.played_so_far + [self.game.gameId]
+        file = open("savedpuzzles.txt", "r")
+        readstatus = 0
+        for line in file:
+            if readstatus == 0 and line.rstrip("\r\n").isdigit():
+                if int(line) == puzzlebank[ctr]:
+                    readstatus = 1
+                    continue
+            if readstatus == 1 and line.rstrip("\r\n").isdigit():
+                break
+            elif readstatus == 1:
+                line = line.rstrip("\r\n")
+                if line[0] == 'e':
+                    self.game.data_fills = self.game.data_fills + [[int(line[1]), int(line[2])]]
+                else:
+                    self.game.data_totals = self.game.data_totals + [[int(line[:-3]), line[-3], int(line[-2]), int(line[-1])]]
+        file.close()
+        self.game.game_over = False
+        self.canvas.delete("victory")
+        self.canvas.delete("circ")
+        self.canvas.delete("grays")
+        self.canvas.delete("grayliners")
+        self.canvas.delete("numbers")
+        self.canvas.delete("grays")
+        self.canvas.delete("numbersfilled")
+        self.parent.title("Kakuro | Puzzle: " + str(self.game.gameId))
+        self.draw_grid()
+        self.draw_puzzle()
+
 class KakuroRandomGame(object):
     """
     A Kakuro game. Stores gamestate and completes the puzzle as needs be
     """
     def __init__(self):
+        self.played_so_far = []
         self.data_filled = []
         self.data_fills = []
         self.data_totals = []
@@ -364,8 +426,12 @@ class KakuroRandomGame(object):
                 if line.rstrip("\r\n").isdigit():
                     puzzlebank = puzzlebank + [int(line)]
             file.close()
+        puzzlebank = [ele for ele in puzzlebank if ele not in self.played_so_far]
         numpuzzles = len(puzzlebank)
-        print "There seem to be "+str(numpuzzles)+" unique puzzles!"
+        if len(puzzlebank) == 0:
+            print "Uh-Oh! You have exhausted the puzzle bank! Gather more puzzles!"
+            sys.exit()
+        print "There seem to be "+str(numpuzzles)+" unique untried puzzles this session!"
         print "Randomly picking one..."
         ctr = 0
         currprob = 1.0/(numpuzzles-ctr)
@@ -376,7 +442,7 @@ class KakuroRandomGame(object):
             currguess = random.random()
         self.gameId = puzzlebank[ctr]
         print "Selected puzzle: Number "+str(puzzlebank[ctr])+ ". Click anywhere on the grid to begin..."
-
+        self.played_so_far = self.played_so_far + [self.gameId]
         file = open("savedpuzzles.txt", "r")
         readstatus = 0
         for line in file:
@@ -436,6 +502,7 @@ class KakuroCustomGame(object):
     A Kakuro game. Stores gamestate and completes the puzzle as needs be
     """
     def __init__(self):
+        self.played_so_far = []
         self.data_filled = []
         self.data_fills = []
         self.data_totals = []
