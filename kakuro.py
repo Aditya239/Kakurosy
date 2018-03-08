@@ -1,7 +1,8 @@
 import sys
 import random
-from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM, PhotoImage, Label
+from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, LEFT, RIGHT, BOTTOM, PhotoImage, Label
 from datetime import datetime
+from pulp import *
 
 random.seed(datetime.now())
 
@@ -31,8 +32,12 @@ class KakuroUI(Frame):
         self.pack(fill=BOTH, expand=1)
         self.canvas = Canvas(self, width=WIDTH, height=HEIGHT, highlightthickness=0)
         self.canvas.pack(fill=BOTH, side=TOP)
+
+        solve_button = Button(self, text="Solve!", command=self.solve)
+        #TODO: Fix this trigger!
+        solve_button.pack(side=RIGHT, padx = 10)
         clear_button = Button(self, text="Clear answers", command=self.clear_answers)
-        clear_button.pack(fill=BOTH, side=BOTTOM)
+        clear_button.pack(side=RIGHT)
 
         self.draw_grid()
         self.draw_puzzle()
@@ -165,6 +170,7 @@ class KakuroUI(Frame):
             return True
 
     def key_pressed(self, event):
+        self.canvas.delete("victory")
         self.canvas.delete("circ")
         if self.game.game_over:
             return
@@ -191,6 +197,7 @@ class KakuroUI(Frame):
                 self.draw_victory()
 
     def Upkey_pressed(self, event):
+        self.canvas.delete("victory")
         if self.game.game_over:
             return
         if self.row > 0 and self.col >= 0:
@@ -198,6 +205,7 @@ class KakuroUI(Frame):
             self.draw_cursor()
 
     def Downkey_pressed(self, event):
+        self.canvas.delete("victory")
         if self.game.game_over:
             return
         if self.row >= 0 and self.col >= 0 and self.row < 8:
@@ -205,6 +213,7 @@ class KakuroUI(Frame):
             self.draw_cursor()
 
     def Rightkey_pressed(self, event):
+        self.canvas.delete("victory")
         if self.game.game_over:
             return
         if self.row >= 0 and self.col >= 0 and self.col <8:
@@ -212,6 +221,7 @@ class KakuroUI(Frame):
             self.draw_cursor()
 
     def Leftkey_pressed(self, event):
+        self.canvas.delete("victory")
         if self.game.game_over:
             return
         if self.row >= 0 and self.col > 0:
@@ -219,6 +229,7 @@ class KakuroUI(Frame):
             self.draw_cursor()
 
     def Bkspkey_pressed(self, event):
+        self.canvas.delete("victory")
         self.canvas.delete("circ")
         if self.game.game_over:
             return
@@ -231,6 +242,107 @@ class KakuroUI(Frame):
         self.game.data_filled = []
         self.canvas.delete("victory")
         self.canvas.delete("circ")
+        self.draw_puzzle()
+
+    def solve(self):
+        self.game.data_filled = []
+        self.canvas.delete("victory")
+        self.canvas.delete("circ")
+        options = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+        # Remember to zero down the indices
+        vals = options
+        rows = options
+        cols = options
+        prob = LpProblem("Kakuro Problem", LpMinimize)
+        choices = LpVariable.dicts("Choice", (vals, rows, cols), 0, 1, LpInteger)
+        # The complete set of boolean choices
+        prob += 0, "Arbitrary Objective Function"
+        # Force singular values. Even for extraneous ones
+        for r in rows:
+            for c in cols:
+                prob += lpSum([choices[v][r][c] for v in vals]) == 1, ""
+
+        # Force uniqueness in each 'zone' and sum constraint for that zone
+        # Row zones
+        for r in rows:
+            zonecolsholder = []
+            activated = False
+            zonecolssumholder = 0
+            for c in cols:
+                if not activated and [int(r)-1,int(c)-1] in self.game.data_fills:
+                    activated = True
+                    zonecolsholder = zonecolsholder +[c]
+                    zonecolssumholder = [elem[0] for elem in self.game.data_totals if elem[1]=='h' and elem[2] == int(r)-1 and elem[3] == int(c)-2][0]
+                    if c == "9":
+                        # Uniqueness in that zone of columns
+                        for v in vals:
+                            prob += lpSum([choices[v][r][co] for co in zonecolsholder]) <= 1, ""
+                        # Sum constraint for that zone of columns
+                        prob += lpSum([int(v) * choices[v][r][co] for v in vals for co in zonecolsholder]) == zonecolssumholder, ""
+                elif activated and [int(r)-1,int(c)-1] in self.game.data_fills:
+                    zonecolsholder = zonecolsholder + [c]
+                    if c == "9":
+                        # Uniqueness in that zone of columns
+                        for v in vals:
+                            prob += lpSum([choices[v][r][co] for co in zonecolsholder]) <= 1, ""
+                        # Sum constraint for that zone of columns
+                        prob += lpSum([int(v) * choices[v][r][co] for v in vals for co in zonecolsholder]) == zonecolssumholder, ""
+                elif activated and [int(r)-1,int(c)-1] not in self.game.data_fills:
+                    activated = False
+                    # Uniqueness in that zone of columns
+                    for v in vals:
+                        prob += lpSum([choices[v][r][co] for co in zonecolsholder]) <= 1, ""
+                    # Sum constraint for that zone of columns
+                    prob += lpSum([int(v)*choices[v][r][co] for v in vals for co in zonecolsholder]) == zonecolssumholder, ""
+                    zonecolssumholder = 0
+                    zonecolsholder = []
+
+        # Col zones
+        for c in cols:
+            zonerowsholder = []
+            activated = False
+            zonerowssumholder = 0
+            for r in rows:
+                if not activated and [int(r)-1,int(c)-1] in self.game.data_fills:
+                    activated = True
+                    zonerowsholder = zonerowsholder +[r]
+                    zonerowssumholder = [elem[0] for elem in self.game.data_totals if elem[1]=='v' and elem[2] == int(r)-2 and elem[3] == int(c)-1][0]
+                    if r == "9":
+                        # Uniqueness in that zone of rows
+                        for v in vals:
+                            prob += lpSum([choices[v][ro][c] for ro in zonerowsholder]) <= 1, ""
+                        # Sum constraint for that zone of rows
+                        prob += lpSum([int(v) * choices[v][ro][c] for v in vals for ro in zonerowsholder]) == zonerowssumholder, ""
+                elif activated and [int(r)-1,int(c)-1] in self.game.data_fills:
+                    zonerowsholder = zonerowsholder + [r]
+                    if r == "9":
+                        # Uniqueness in that zone of rows
+                        for v in vals:
+                            prob += lpSum([choices[v][ro][c] for ro in zonerowsholder]) <= 1, ""
+                        # Sum constraint for that zone of rows
+                        prob += lpSum([int(v) * choices[v][ro][c] for v in vals for ro in zonerowsholder]) == zonerowssumholder, ""
+                elif activated and [int(r)-1,int(c)-1] not in self.game.data_fills:
+                    activated = False
+                    # Uniqueness in that zone of rows
+                    for v in vals:
+                        prob += lpSum([choices[v][ro][c] for ro in zonerowsholder]) <= 1, ""
+                    # Sum constraint for that zone of rows
+                    prob += lpSum([int(v)*choices[v][ro][c] for v in vals for ro in zonerowsholder]) == zonerowssumholder, ""
+                    zonerowssumholder = 0
+                    zonerowsholder = []
+
+        # Force all extraneous values to 1 (arbitrary) | Possibly many times
+        for ite in self.game.data_totals:
+            prob += choices["1"][str(ite[2]+1)][str(ite[3]+1)] == 1, ""
+
+        # Suppress calculation messages
+        GLPK(msg=0).solve(prob)
+        # Solution: The commented print statements are for debugging aid.
+        for v in prob.variables():
+            # print v.name, "=", v.varValue
+            if v.varValue == 1 and [int(v.name[9])-1, int(v.name[11])-1] in self.game.data_fills:
+                # print v.name, ":::", v.varValue, [int(v.name[9])-1, int(v.name[11])-1, int(v.name[7])]
+                self.game.data_filled = self.game.data_filled + [[int(v.name[9])-1, int(v.name[11])-1, int(v.name[7])]]
         self.draw_puzzle()
 
 class KakuroRandomGame(object):
@@ -263,7 +375,7 @@ class KakuroRandomGame(object):
             currprob = 1.0 / (numpuzzles-ctr)
             currguess = random.random()
         self.gameId = puzzlebank[ctr]
-        print "Selected puzzle: Number "+str(puzzlebank[ctr])+ ". Click anywhere to begin..."
+        print "Selected puzzle: Number "+str(puzzlebank[ctr])+ ". Click anywhere on the grid to begin..."
 
         file = open("savedpuzzles.txt", "r")
         readstatus = 0
@@ -344,7 +456,7 @@ class KakuroCustomGame(object):
                             self.data_totals = self.data_totals + [[int(proced[j][1]),'h',i,j]]
         except(ValueError):
             raise KakuroError('Format not followed! Integers only otherwise something else')
-        print '\nStarting custom game. Click anywhere to begin...'
+        print '\nStarting custom game. Click anywhere on the grid to begin...'
         self.gameId = 0
         self.game_over = False
 
@@ -388,14 +500,14 @@ class KakuroCustomGame(object):
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print ("Wrong number of arguments! Enter mode (custom or random) to run in as argument.\n"
-               " Example Usage: python kakuro.py random to run random puzzles\n"
+               "Example Usage: python kakuro.py random to run random puzzles\n"
                "Going forward with random...\n")
         game = KakuroRandomGame()
         root = Tk()
         ui = KakuroUI(root, game)
         root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
         root.mainloop()
-    if sys.argv[1]=='random':
+    elif sys.argv[1]=='random':
         game = KakuroRandomGame()
         root = Tk()
         ui = KakuroUI(root, game)
@@ -403,6 +515,15 @@ if __name__ == '__main__':
         root.mainloop()
     elif sys.argv[1]=='custom':
         game = KakuroCustomGame()
+        root = Tk()
+        ui = KakuroUI(root, game)
+        root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
+        root.mainloop()
+    else:
+        print ("Wrong number or format of arguments! Enter mode (custom or random) to run in as argument.\n"
+               "Example Usage: python kakuro.py random to run random puzzles\n"
+               "Going forward with random...\n")
+        game = KakuroRandomGame()
         root = Tk()
         ui = KakuroUI(root, game)
         root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
