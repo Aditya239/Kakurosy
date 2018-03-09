@@ -125,3 +125,12 @@ python kakuro.py custom
 [here]:http://www.cse.iitd.ac.in/~cs5140599/
 [PuLP]: https://pythonhosted.org/PuLP/
 [GPLK]: https://www.gnu.org/software/glpk/
+
+## Author
+
+That was fun!
+
+## License
+
+This project is licensed under the MIT License - see the
+[LICENSE.md](LICENSE) file for details
