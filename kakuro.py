@@ -1,6 +1,6 @@
 import sys
 import random
-from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, LEFT, RIGHT, BOTTOM, PhotoImage, Label
+from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, RIGHT
 from datetime import datetime
 from pulp import *
 
@@ -28,7 +28,10 @@ class KakuroUI(Frame):
         self.initUI()
 
     def initUI(self):
-        self.parent.title("Kakuro | Puzzle: "+str(self.game.gameId))
+        if self.game.gameId != 0:
+            self.parent.title("Kakuro | Puzzle: "+str(self.game.gameId))
+        else:
+            self.parent.title("Kakuro | Puzzle: Custom")
         self.pack(fill=BOTH, expand=1)
         self.canvas = Canvas(self, width=WIDTH, height=HEIGHT, highlightthickness=0)
         self.canvas.pack(fill=BOTH, side=TOP)
