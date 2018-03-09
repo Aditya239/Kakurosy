@@ -104,7 +104,7 @@ sudo pulptest
 ## Running the tests
 
 The test puzzles are in the ```savedpuzzles.txt``` file.
-To add more puzzles into this file (scraped from [here]: So kindly read [this] and use 
+To add more puzzles into this file (scrapes from [here]: So kindly read [this] and use 
 accordingly. Please ensure web connection):
 ```
 python gather.py
