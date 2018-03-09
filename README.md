@@ -128,7 +128,9 @@ python kakuro.py custom
 
 ## Author
 
-That was fun!
+I love **Kakuro** so this was a really fun project!
+
+<img src="assets/fun.gif"/>
 
 ## License
 
