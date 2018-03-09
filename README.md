@@ -13,8 +13,8 @@ which is solved using a solver.
 addictive puzzle game that is often referred to as a mathematical transliteration 
 of the crossword. It was more popular once than the now ubiquitous Sudoku, it is
 extremely versatile because it can come in any size and the fillout space could 
-assume arbitrary shapes and arguably it is more challenging. It has been proven 
-to be [NP complete]. Find out more on [Wikipedia].
+assume arbitrary shapes and arguably it is more challenging. Find out more on [Wikipedia]. 
+It has been proven to be [NP complete].
 
 Kakuro is played on a rectangular grid of cells. The aim is to place numbers 
 from 1 to 9 in blocks of empty cells running horizontally and vertically inside 
@@ -46,8 +46,8 @@ In the `custom` (as opposed to `random`) mode, a puzzle may be entered from the 
 
 ### Custom Mode Specification
 For entering any 9x9 Kakuro puzzle from the console, the following format is to be used:
-* Every row of the puzzle is to be entered in a new line. Thus, enter nine lines terminated by newlines.
-* For a row, each cell entry must be delimited by commas. Thus nine cells (delimited by eight commas) a line.
+* Every row of the puzzle is to be entered in a new line. Thus, there should be nine lines terminated by newlines.
+* For a row, each cell entry must be delimited by commas. Thus there should be nine cells (and eight commas) a line.
 * A blank cell for user input is to be represented by a space character. A darkened cell (with a diagonal partition)
   is to be represented by `x\y` where `x` denotes the entry in the lower-left triangular subcell and `y` denotes the 
   entry in the upper-right triangular subcell. `x` and `y` can be integers or space character.
@@ -69,7 +69,7 @@ represents the following puzzle:
 <img src="assets/sample_puzzle.png" width="400"/>
 
 ### The Kakuro Integer Linear Program
-In Kakuro, there is no objective function, only constraints (in this case it is set to `0`).
+In Kakuro, there is no objective function (in this case it is set to `0`), only constraints.
 There are two constraints that must be passed on to the ILP solver. 
 This determines the choice of integer variables. 
 
@@ -79,7 +79,7 @@ This determines the choice of integer variables.
 * **Distinctness Constraints:** Each block or zone **must have distinct** integers from `1 to 9` 
   in its cells. (The restriction to digits is enforced during entry itself.)
 
-We use the variables `u_i_j_k` a 0-1 integer variable which is 1 iff the cell entry in the cell 
+We use the variables `u_i_j_k` each a 0-1 integer variable which is 1 *iff* the cell entry in the cell 
 in row `j` and column `k` is equal to `i` in the solution.
 
 ## Getting Started
@@ -104,7 +104,8 @@ sudo pulptest
 ## Running the tests
 
 The test puzzles are in the ```savedpuzzles.txt``` file.
-To add more puzzles into this file (scraped from [here], ensure web connection):
+To add more puzzles into this file (scraped from [here]: So kindly read [this] and use 
+accordingly. Please ensure web connection):
 ```
 python gather.py
 ```
@@ -125,6 +126,8 @@ python kakuro.py custom
 [here]:http://www.cse.iitd.ac.in/~cs5140599/
 [PuLP]: https://pythonhosted.org/PuLP/
 [GPLK]: https://www.gnu.org/software/glpk/
+[here]: http://www.kakuroconquest.com/
+[this]: http://www.kakuroconquest.com/terms.php
 
 ## Author
 
