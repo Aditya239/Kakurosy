@@ -123,7 +123,6 @@ python kakuro.py custom
 [gif_try]:assets/demo_try.gif "Kakuro Try GIF"
 [gif_oper]:assets/demo_oper.gif "Kakuro Operate GIF"
 [gif_cust]:assets/demo_cust.gif "Kakuro Custom GIF"
-[here]:http://www.cse.iitd.ac.in/~cs5140599/
 [PuLP]: https://pythonhosted.org/PuLP/
 [GPLK]: https://www.gnu.org/software/glpk/
 [here]: http://www.kakuroconquest.com/
